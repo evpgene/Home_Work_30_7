@@ -1,14 +1,23 @@
+#pragma once
+
+#include <future>
+#include <iostream>
+
 #include "ThreadPool.h"
 
-using FuncType = void (*)(int, int);
+using functionptr_t = void (*)(int, int); // тип указателя на функцию
 
 class RequestHandler {
-	public:
-	RequestHandler();
-	~RequestHandler();
-	void pushRequest(FuncType f, int id, int arg); // отправка запроса на выполнение
-
-	private:
-	// пул потоков
-	ThreadPool threadPool;
+ private:
+  ThreadPool _thread_pool;
+  
+ public:
+  RequestHandler();
+  ~RequestHandler();
+  result_t pushTaskRequest(functionptr_t function, int ordinal_number,
+                           int sleep_delay);  // отправка запроса на выполнение
+  result_t pushTaskRequest(functionptr1_t function, int* array, long left,
+                           long right,
+                           std::shared_ptr<std::vector<result_t>>
+                               results_ptr);  // отправка запроса на выполнение
 };

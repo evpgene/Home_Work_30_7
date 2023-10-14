@@ -3,24 +3,35 @@
 #include <functional>
 #include <thread>
 #include <vector>
+#include <future>
 
-#include "BlockedQueue.h"
+#include "TaskQueue.h"
+#include "InterruptableThread.h"
 
-using FuncType = void (*)(int, int);
-using ThreadFunction = std::function<void()>;
+using result_t = std::future<void>;
+using functionptr_t = void (*)(int, int); // задаём трафарет функции
+using functionptr1_t = void (*)(int*, long, long, std::shared_ptr<std::vector<result_t>>); // задаём трафарет функции
+using task_t = std::packaged_task<void()>;
+
+class InterruptableThread; // предварительное объявление класса
 
 class ThreadPool {
+ private:
+  int _threads_number{0};  // количество потоков
+  int _tasks_counter{0};  // счётчик всех добавленных в пулл задач
+  std::vector<InterruptableThread*> _threads;  //указатели на потоки
+  std::vector<TaskQueue<task_t>> _queues;  // очереди задач для каждого потока
+
+
  public:
   ThreadPool();
+  ~ThreadPool();
   void start();
   void stop();
-  void push_task(FuncType f, int id, int arg);
-  void threadFunc(int qindex);
+  result_t pushTask(functionptr_t function, int ordinal_number, int sleep_delay);
+  result_t pushTask(functionptr1_t function, int* array, long left, long right, std::shared_ptr<std::vector<result_t>> results_ptr);
 
- private:
-  int m_thread_count;                  // количество потоков
-  std::vector<std::thread> m_threads;  // потоки
-  std::vector<BlockedQueue<ThreadFunction>>
-      m_thread_queues;  // очереди задач для потоков
-  int m_index;  // для равномерного распределения задач
+  void popExecTask(int thread_index);
+  void interrupt();
+
 };
